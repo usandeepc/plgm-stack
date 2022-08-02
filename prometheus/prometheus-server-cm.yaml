@@ -24,6 +24,8 @@ data:
     - /etc/config/alerting_rules.yml
     - /etc/config/rules
     - /etc/config/alerts
+    remote_write:
+      - url: http://mimir:9009/api/v1/push
     scrape_configs:
     - job_name: prometheus
       static_configs:

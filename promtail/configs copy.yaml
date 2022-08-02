@@ -1,0 +1,42 @@
+---
+# Source: promtail/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: promtail
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: promtail
+stringData:
+  promtail.yaml: |
+    server:
+      log_level: info
+      http_listen_port: 3101
+    clients:
+      - url: http://loki.observability:3100/loki/api/v1/push   
+    positions:
+      filename: /run/promtail/positions.yaml    
+    scrape_configs:
+      - job_name: kubernetes-pods
+        pipeline_stages:
+          - cri: {}
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - action: labelmap
+          regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+          replacement: __param_$1
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_namespace
+          target_label: namespace
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_name
+          target_label: pod
+        - action: drop
+          regex: Pending|Succeeded|Failed|Completed
+          source_labels:
+          - __meta_kubernetes_pod_phase

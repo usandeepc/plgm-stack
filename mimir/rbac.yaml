@@ -1,0 +1,39 @@
+# Source: mimir-distributed/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mimir
+  labels:
+    app.kubernetes.io/name: mimir
+  namespace: "observability"
+---
+# Source: mimir-distributed/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mimir
+  labels:
+    app.kubernetes.io/name: mimir
+  namespace: "observability"
+rules:
+- apiGroups:      ['extensions']
+  resources:      ['podsecuritypolicies']
+  verbs:          ['use']
+  resourceNames:  [mimir]
+---
+---
+# Source: mimir-distributed/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mimir
+  labels:
+    app.kubernetes.io/name: mimir
+  namespace: "observability"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mimir
+subjects:
+- kind: ServiceAccount
+  name: mimir

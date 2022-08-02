@@ -1,0 +1,46 @@
+---
+# Source: mimir-distributed/templates/ingester/ingester-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mimir
+  labels:
+    app.kubernetes.io/name: mimir
+  namespace: "observability"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9009
+      protocol: TCP
+      name: mimir
+  selector:
+    app.kubernetes.io/name: mimir
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mimir-headless
+  labels:
+    app.kubernetes.io/name: mimir
+spec:
+  ports:
+    - port: 9009
+      name: mimir
+    - port: 8080
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+    - port: 9095
+      protocol: TCP
+      name: grpc
+      targetPort: grpc
+    - port: 9094
+      protocol: TCP
+      name: cluster
+    - name: gossip-ring
+      port: 7946
+      protocol: TCP
+      targetPort: 7946
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: mimir

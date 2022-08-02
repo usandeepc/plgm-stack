@@ -1,0 +1,67 @@
+---
+# Source: mimir-distributed/templates/runtime-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mimir-runtime
+  labels:
+    app.kubernetes.io/name: mimir
+  namespace: "observability"
+data:
+  runtime.yaml: |
+    
+    {}
+---
+# Source: mimir-distributed/templates/mimir-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mimir-config
+  labels:
+    app.kubernetes.io/name: mimir
+  namespace: "observability"
+data:
+  mimir.yaml: |
+
+    # Run Mimir in single process mode, with all components running in 1 process. 
+    target: all,alertmanager,overrides-exporter
+    multitenancy_enabled: false
+    memberlist:
+      join_members: [ mimir-0.mimir-headless, mimir-1.mimir-headless]
+    # Configure Mimir to use Minio as its object storage backend. 
+    blocks_storage:
+      backend: filesystem
+      bucket_store:
+        sync_dir: /data/mimir/tsdb-sync
+      filesystem:
+        dir: /data/mimir/data/tsdb
+      tsdb:
+        dir: /data/mimir/tsdb
+
+
+    ruler:
+      rule_path: /data/ruler
+      alertmanager_url: http://127.0.0.1:8080/alertmanager
+      ring:
+        # Quickly detect unhealthy rulers to speed up the tutorial.
+        heartbeat_period: 2s
+        heartbeat_timeout: 10s
+
+    ruler_storage:
+      backend: filesystem
+      filesystem:
+        dir: /data/mimir/rules
+
+    alertmanager:
+      data_dir: /data/alertmanager
+      external_url: http://localhost:9009/alertmanager
+
+    alertmanager_storage:
+      backend: filesystem
+      filesystem:
+        dir: /data/mimir/alerts-storage
+
+    server:
+      http_listen_port: 9009
+      http_listen_address: 0.0.0.0
+      log_level: debug

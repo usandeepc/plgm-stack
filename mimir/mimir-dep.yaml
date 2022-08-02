@@ -1,0 +1,79 @@
+---
+# Source: prometheus/templates/server/deploy.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    component: "mimir"
+    app: prometheus
+    app.kubernetes.io/name: mimir
+  name: mimir
+  namespace: observability
+spec:
+  serviceName: mimir-headless
+  selector:
+    matchLabels:
+      component: "mimir"
+      app: prometheus
+      app.kubernetes.io/name: mimir
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        component: "mimir"
+        app: prometheus
+        app.kubernetes.io/name: mimir
+    spec:
+      enableServiceLinks: true
+      serviceAccountName: mimir
+      containers:
+
+        - name: mimir
+          image: "grafana/mimir:2.2.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            {}
+          args:
+            - "-target=all,alertmanager,overrides-exporter"
+            - "-config.expand-env=true"
+            - "-config.file=/etc/mimir/mimir.yaml"
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: grpc
+              containerPort: 9095
+              protocol: TCP
+            - name: memberlist
+              containerPort: 7946
+              protocol: TCP
+            - name: cluster
+              containerPort: 9094
+              protocol: TCP
+            - name: plain
+              containerPort: 9009
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "0.2"
+              memory: "0.5Gi"
+            limits:
+              cpu: "0.5"
+              memory: "1Gi"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/mimir
+            - name: runtime-config
+              mountPath: /var/mimir
+            - name: storage-volume
+              mountPath: "/data"
+      volumes:
+        - name: config-volume
+          configMap:
+            name: mimir-config
+        - name: runtime-config
+          configMap:
+            name: mimir-runtime
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: mimir
